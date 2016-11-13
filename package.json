@@ -1,0 +1,27 @@
+{
+    "author": "korovkin@gmail.com",
+    "dependencies": {},
+    "keywords": [],
+    "name": "Numbers",
+    "pebble": {
+        "capabilities": [
+            "health"
+        ],
+        "displayName": "Numbers",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "basalt"
+        ],
+        "uuid": "1db06c90-9fcb-47fd-b399-94414e63b628",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
