@@ -5,11 +5,12 @@
 
 static Window *s_main_window;
 static TextLayer *s_time_layer = NULL;
+static TextLayer *s_week_day_layer = NULL;
 static TextLayer *s_date_layer = NULL;
 static TextLayer *s_steps_layer = NULL;
 static TextLayer *s_battery_layer = NULL;
 static TextLayer *s_walk_meters_layer = NULL;
-static TextLayer *s_sleep_hours = NULL;
+static TextLayer *s_sleep_hours_layer = NULL;
 
 static void handle_second_tick(struct tm* tick_time, TimeUnits units_changed) {
   static struct tm last_tick_time = {0};
@@ -23,17 +24,18 @@ static void handle_second_tick(struct tm* tick_time, TimeUnits units_changed) {
   static char s_full_date[64] = {0};
   if (last_tick_time.tm_mon != tick_time->tm_mon || last_tick_time.tm_mday != tick_time->tm_mday) {
     strftime(s_date_text, sizeof(s_date_text), "%d/%m", tick_time);
-    // char* day = "";
-    // switch(tick_time->tm_wday) {
-    //   case 0:  day = "SUN"; break;
-    //   case 1:  day = "MON"; break;
-    //   case 2:  day = "TUE"; break;
-    //   case 3:  day = "WED"; break;
-    //   case 4:  day = "THU"; break;
-    //   case 5:  day = "FRI"; break;
-    //   case 6:  day = "SAT"; break;
-    // }
-    // snprintf(s_full_date, sizeof(s_full_date), "%s %s", day, s_date_text);
+    char* day = "";
+    switch(tick_time->tm_wday) {
+      case 0:  day = "SUNDAY"; break;
+      case 1:  day = "MONDAY"; break;
+      case 2:  day = "TUESDAY"; break;
+      case 3:  day = "WEDNESDAY"; break;
+      case 4:  day = "THURSDAY"; break;
+      case 5:  day = "FRIDAY"; break;
+      case 6:  day = "SATURDAY"; break;
+    }
+    text_layer_set_text(s_week_day_layer, day);
+
     snprintf(s_full_date, sizeof(s_full_date), "%s", s_date_text);
     text_layer_set_text(s_date_layer, s_full_date);
   }
@@ -74,7 +76,7 @@ static void handle_second_tick(struct tm* tick_time, TimeUnits units_changed) {
     snprintf(s_upper_left_text,
              sizeof(s_upper_left_text), "%d",
              (int)sleepSeconds/3600);
-    text_layer_set_text(s_sleep_hours, s_upper_left_text);
+    text_layer_set_text(s_sleep_hours_layer, s_upper_left_text);
     lastSleepSeconds = sleepSeconds;
   }
 
@@ -84,6 +86,14 @@ static void handle_second_tick(struct tm* tick_time, TimeUnits units_changed) {
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   const GRect bounds = layer_get_bounds(window_layer);
+
+  GRect weekdayFrame = bounds;
+  weekdayFrame.origin.y += 24;
+  s_week_day_layer = text_layer_create(weekdayFrame);
+  text_layer_set_text_color(s_week_day_layer, GColorGreen);
+  text_layer_set_background_color(s_week_day_layer, GColorClear);
+  text_layer_set_text_alignment(s_week_day_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_week_day_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 
   GRect timeFrame = bounds;
   timeFrame.origin.y += 40;
@@ -134,32 +144,34 @@ static void main_window_load(Window *window) {
   GRect upperLeft = upperRight;
   upperLeft.origin.x = -2;
   upperLeft.origin.y -= 20;
-  s_sleep_hours = text_layer_create(upperLeft);
-  text_layer_set_text_color(s_sleep_hours, GColorRed);
-  text_layer_set_background_color(s_sleep_hours, GColorClear);
-  text_layer_set_text_alignment(s_sleep_hours, GTextAlignmentRight);
-  text_layer_set_font(s_sleep_hours, fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS));
+  s_sleep_hours_layer = text_layer_create(upperLeft);
+  text_layer_set_text_color(s_sleep_hours_layer, GColorRed);
+  text_layer_set_background_color(s_sleep_hours_layer, GColorClear);
+  text_layer_set_text_alignment(s_sleep_hours_layer, GTextAlignmentRight);
+  text_layer_set_font(s_sleep_hours_layer, fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS));
 
   time_t now = time(NULL);
   struct tm *current_time = localtime(&now);
   handle_second_tick(current_time, SECOND_UNIT);
 
   tick_timer_service_subscribe(SECOND_UNIT, &handle_second_tick);
+  layer_add_child(window_layer, text_layer_get_layer(s_week_day_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_steps_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_battery_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_walk_meters_layer));
-  layer_add_child(window_layer, text_layer_get_layer(s_sleep_hours));
+  layer_add_child(window_layer, text_layer_get_layer(s_sleep_hours_layer));
 }
 
 static void main_window_unload(Window *window) {
+  text_layer_destroy(s_week_day_layer);
   text_layer_destroy(s_time_layer);
   text_layer_destroy(s_date_layer);
   text_layer_destroy(s_steps_layer);
   text_layer_destroy(s_battery_layer);
   text_layer_destroy(s_walk_meters_layer);
-  text_layer_destroy(s_sleep_hours);
+  text_layer_destroy(s_sleep_hours_layer);
 }
 
 static void init() {
